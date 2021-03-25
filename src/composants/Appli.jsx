@@ -8,6 +8,11 @@ import { useEffect, useState } from 'react';
 import AjouterDossier from './AjouterDossier';
 import * as crudDossiers from '../services/crud-dossiers';
 import * as crudUtilisateurs from '../services/crud-utilisateurs';
+import TextField from '@material-ui/core/TextField';
+import MenuItem from '@material-ui/core/MenuItem';
+import { makeStyles } from "@material-ui/core/styles";
+
+
 
 export default function Appli() {
   // État de l'utilisateur (pas connecté = null / connecté = objet FB-Auth spécial)
@@ -20,6 +25,51 @@ export default function Appli() {
   // État de la boîte de dialogue "Ajout Dossier" (ouverte = true / fermée = false)
   const [ouvertAD, setOuvertAD] = useState(false);
 
+  // État du tri des dossiers
+  const [triage, setTriage] = useState("date_modif_desc");
+
+  const optionsTri = [
+    {
+      valeur : 'date_modif_desc',
+      texte : 'Date de modification descendante',
+      categorie : 'datemodif',
+      desc : 'desc'
+    },
+    {
+      valeur : 'nom_asce',
+      texte : 'Nom de dossier ascendant',
+      categorie : 'nom',
+      desc : 'asc'
+    },
+    {
+      valeur : 'nom_desc',
+      texte : 'Nom de dossier descendante',
+      categorie : 'nom',
+      desc : 'desc'
+    }
+  ]
+
+  const handleChange = (event) => {
+    setTriage(event.target.value);    
+  };
+
+  async function gererTriage(categorie, desc)
+  {
+    crudDossiers.trierDossiers(utilisateur.uid, categorie, desc).then(
+      dossiers => setDossiers(dossiers)
+      )
+  }
+
+  const useStyles = makeStyles((theme) => ({
+    root: {
+      "& .MuiTextField-root": {
+        margin: theme.spacing(1),
+        width: "25ch"
+      }
+    }
+  }));
+
+  const classes = useStyles();
   // Observer le changement d'état de la connexion utilisateur (FB-Auth)
   // Remarquez que ce code est dans un useEffect() car on veut l'exécuter 
   // UNE SEULE FOIS (regardez le tableau des 'deps' - dépendances) et ceci 
@@ -57,6 +107,21 @@ export default function Appli() {
           <>
             <Entete utilisateur={utilisateur} />
             <section className="contenu-principal">
+              <form className={classes.root}>
+                <TextField
+                  id="tri-des-dossiers"
+                  select
+                  label="Tri des dossiers"
+                  value={triage}
+                  onChange={handleChange}
+                >
+                  {optionsTri.map((option) => (
+                    <MenuItem key={option.valeur} value={option.valeur} onClick={() => {gererTriage(option.categorie, option.desc)}}>
+                      {option.texte}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </form>
               <ListeDossiers utilisateur={utilisateur} etatDossiers={etatDossiers} />
               <AjouterDossier ouvert={ouvertAD} setOuvert={setOuvertAD} gererAjout={gererAjouter} />
               <Fab onClick={() => setOuvertAD(true)} className="ajoutRessource" color="primary" aria-label="Ajouter dossier">
